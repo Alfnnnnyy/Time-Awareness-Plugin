@@ -134,12 +134,20 @@ def _on_pre_llm_call(
 ) -> str:
     """Build and inject temporal context into the user message."""
     now_utc = datetime.now(timezone.utc)
-    server_tz_name = time.tzname[0] if time.daylight == 0 else time.tzname[1]
+
+    # Server timezone — derive offset from time module
+    # time.timezone = seconds WEST of UTC for standard time (negative = east)
+    # time.daylight = non-zero if DST was ever observed at this location
+    # time.altzone = seconds WEST of UTC for DST (if applicable)
+    import zoneinfo
+    _is_dst = time.daylight and time.localtime().tm_isdst
+    server_tz_name = time.tzname[1] if _is_dst else time.tzname[0]
+    server_offset_secs = -(time.altzone if _is_dst else time.timezone)
+    server_offset_str = _format_offset(server_offset_secs)
 
     # Detect user timezone
     user_tz_name = _detect_user_timezone(platform, sender_id)
     try:
-        import zoneinfo
         user_tz = zoneinfo.ZoneInfo(user_tz_name)
         user_now = now_utc.astimezone(user_tz)
         user_offset = user_now.utcoffset()
@@ -150,19 +158,6 @@ def _on_pre_llm_call(
         user_tz_name = "UTC"
         user_now = now_utc
         user_offset_str = "+00:00"
-
-    # Server timezone offset
-    try:
-        import zoneinfo
-        server_tz = zoneinfo.ZoneInfo(
-            time.tzname[0] if time.daylight == 0 else time.tzname[1]
-        )
-        server_offset = now_utc.astimezone(server_tz).utcoffset()
-        server_offset_str = _format_offset(
-            server_offset.total_seconds() if server_offset else 0
-        )
-    except Exception:
-        server_offset_str = "?"
 
     # Build the context block
     lines: list[str] = []
