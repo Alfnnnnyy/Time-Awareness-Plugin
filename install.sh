@@ -3,14 +3,14 @@
 # 🕐 Time Context — universal installer
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/hermes-time-awareness/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/Time-Awareness-Plugin/main/install.sh | bash
 #
 # Or with custom target directory:
-#   curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/hermes-time-awareness/main/install.sh | bash -s -- --dir /opt/time-context
+#   curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/Time-Awareness-Plugin/main/install.sh | bash -s -- --dir /opt/time-context
 #
 set -euo pipefail
 
-REPO="https://raw.githubusercontent.com/Alfnnnnyy/hermes-time-awareness/main"
+REPO="https://raw.githubusercontent.com/Alfnnnnyy/Time-Awareness-Plugin/main"
 INSTALL_DIR="${HOME}/.time-context"
 INSTALL_HERMES=false
 HERMES_PLUGIN_DIR="${HOME}/.hermes/plugins/time-awareness"
@@ -103,4 +103,4 @@ echo ""
 echo "For Claude Code: add to ~/.claude/commands/time-context.json"
 echo "For OpenCode/Codex: reference in AGENTS.md"
 echo ""
-echo "See: https://github.com/Alfnnnnyy/hermes-time-awareness"
+echo "See: https://github.com/Alfnnnnyy/Time-Awareness-Plugin"

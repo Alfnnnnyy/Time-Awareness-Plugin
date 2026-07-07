@@ -47,7 +47,7 @@ Large language models have **no inherent sense of time**. Without external conte
 
 ```bash
 # 1. Install (zero dependencies — pure Python stdlib)
-curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/hermes-time-awareness/main/time_context.py \
+curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/Time-Awareness-Plugin/main/time_context.py \
   -o /usr/local/bin/time_context.py && chmod +x /usr/local/bin/time_context.py
 
 # 2. Set your timezone
