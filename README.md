@@ -59,23 +59,32 @@ Restart Hermes (or `/restart` in gateway).
 
 | Key | Default | Description |
 |---|---|---|
-| `user_timezone` | `"UTC"` | IANA timezone (e.g. `"Asia/Jakarta"`, `"America/New_York"`) |
+| `user_timezone` | `"UTC"` | **Any IANA timezone** (e.g. `"Asia/Jayapura"`, `"America/New_York"`, `"Europe/London"`) |
 | `auto_detect_timezone` | `false` | Auto-detect from platform metadata (future) |
 | `show_delay` | `true` | Show time elapsed since previous message |
 
 ## Timezones
 
-Set your IANA timezone in config.yaml. Common values:
+The plugin supports **all IANA timezones** — ~600 in total, covering every region in the world. Set yours to whatever matches your location.
+
+Common examples:
 
 | Location | IANA Timezone |
 |---|---|
-| Jakarta, Indonesia | `Asia/Jakarta` |
+| Jayapura, Indonesia (WIT) | `Asia/Jayapura` |
+| Jakarta, Indonesia (WIB) | `Asia/Jakarta` |
+| Makassar, Indonesia (WITA) | `Asia/Makassar` |
 | Hong Kong / Beijing | `Asia/Shanghai` |
 | Tokyo, Japan | `Asia/Tokyo` |
 | Singapore | `Asia/Singapore` |
 | New York, USA | `America/New_York` |
 | London, UK | `Europe/London` |
 | Sydney, Australia | `Australia/Sydney` |
+| Dubai, UAE | `Asia/Dubai` |
+| Moscow, Russia | `Europe/Moscow` |
+| São Paulo, Brazil | `America/Sao_Paulo` |
+
+Run `python3 -c "import zoneinfo; print(*sorted(zoneinfo.available_timezones()), sep='\\n')"` to see every supported timezone.
 
 ## How It Works
 
