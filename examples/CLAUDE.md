@@ -1,38 +1,15 @@
-# Claude Code Integration — Time Context
+# Project Instructions
 
-This project adds temporal awareness to Claude Code.
+## Time Context
 
-## Option 1: Custom slash command
-
-Create `~/.claude/commands/time.md`:
-
-```markdown
----
-description: "Show current time, timezone, and message delay"
----
-
-Get accurate temporal context:
-
-    python3 ~/.time-context/time_context.py --format markdown
-```
-
-Then use `/time` during any Claude Code session.
-
-## Option 2: Project-level CLAUDE.md
-
-Add this to your project's `CLAUDE.md`:
-
-```markdown
-## Temporal Awareness
-
-Before responding to any time-sensitive query, run the following to get
-accurate current time and timezone context:
+Before every response, you MUST run the following command to get accurate
+current time and timezone information:
 
 ```bash
 python3 ~/.time-context/time_context.py --format markdown
 ```
 
-This outputs:
+This outputs a table like:
 
 | Field | Value |
 |---|---|
@@ -41,8 +18,5 @@ This outputs:
 | **User time** | `2026-07-07 13:03:45` |
 | **User tz** | `Asia/Jayapura (UTC+09:00)` |
 | **Delay** | `28s ago` |
-```
 
----
-
-See the main [README](../README.md) for installation instructions.
+Use this information in every response — do not guess the current time.

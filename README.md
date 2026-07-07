@@ -96,15 +96,29 @@ Then use `/time` during any Claude Code session.
 
 ### OpenCode / Codex CLI
 
-Add this to your project's `AGENTS.md`:
+OpenCode reads `AGENTS.md` from your project root. Codex CLI reads `CLAUDE.md`. Both are plain markdown files that get injected into the agent's system prompt — the agent sees the instructions on every turn.
+
+Create `AGENTS.md` (or `CLAUDE.md`) in your project root:
 
 ```markdown
 ## Temporal Context
-Before responding, run:
+
+Before every response, you MUST run the following command to get the
+accurate current time, user timezone, and message delay:
+
 ```
-python3 /usr/local/bin/time_context.py
+python3 ~/.time-context/time_context.py
 ```
-This outputs accurate time, timezone, and delay information.
+
+Use this to reference the correct time, adjust for timezone,
+and consider whether the user is actively chatting.
+```
+
+Or copy the ready-made file:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/Time-Awareness-Plugin/main/examples/AGENTS.md \
+  -o AGENTS.md
 ```
 
 ### Hermes Agent
@@ -183,8 +197,8 @@ time-context/
 ├── __init__.py             # Hermes plugin code
 ├── install.sh              # Interactive installer
 └── examples/
-    ├── CLAUDE.md           # Claude Code integration
-    └── AGENTS.md           # OpenCode / Codex integration
+    ├── CLAUDE.md           # Claude Code / Codex CLI integration
+    └── AGENTS.md           # OpenCode integration
 ```
 
 > Use `time_context.py` for any agent. The `plugin.yaml` + `__init__.py` are only needed for Hermes native-plugin mode.
