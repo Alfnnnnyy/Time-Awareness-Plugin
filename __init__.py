@@ -1,46 +1,34 @@
-"""time-awareness plugin — accurate temporal context for every turn.
+"""time-awareness plugin for Hermes Agent.
 
 Injects a ``## Temporal Context`` block into the user message on every API
-call so the agent always knows:
+call so the model always knows the current time, the user's timezone,
+and the message delay.
 
-- Server time (UTC + local)
-- User timezone (detected from platform or configured)
-- Time elapsed since the previous message
+Part of the universal Time Context project — the same temporal awareness
+can be wired into Claude Code, Codex CLI, OpenCode, or any AI agent.
 
-The "how long ago" delta helps the agent reason about recency and
-urgency — did the user just fire off a quick message, or is this a
-new day's continuation?
-
-Usage
------
-Configure user timezone in config.yaml::
+Configure your timezone in config.yaml:
 
     plugins:
       enabled:
         - time-awareness
       entries:
         time-awareness:
-          user_timezone: "Asia/Jakarta"    # IANA timezone
-          # OR auto-detect from platform (Telegram, etc.)
-          auto_detect_timezone: true
-          show_delay: true                 # Show message delay tracking
+          user_timezone: "Asia/Jayapura"
+          show_delay: true
 """
 
 from __future__ import annotations
 
 import logging
-import time
+import time as _time
 import threading
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
 # Per-session message timestamp tracking
-# ---------------------------------------------------------------------------
-# Keyed by session_id, holds the timestamp (in unix seconds) of the last
-# user message the agent saw.  Used to calculate inter-message delay.
 _session_last_seen: Dict[str, float] = {}
 _session_lock = threading.Lock()
 
@@ -66,16 +54,13 @@ def _detect_user_timezone(
 
     Resolution order:
       1. Explicit ``user_timezone`` in config.yaml
-      2. Auto-detect from gateway platform metadata
+      2. Auto-detect from gateway platform metadata (future)
       3. Fallback to ``UTC``
     """
-    # 1. Explicit config wins
     explicit = _get_plugin_config("user_timezone")
     if explicit and isinstance(explicit, str) and explicit.strip():
         return explicit.strip()
 
-    # 2. Auto-detect from platform not yet implemented for most platforms.
-    #    Returns UTC as default. Users set timezone in config.yaml.
     auto = _get_plugin_config("auto_detect_timezone")
     if auto:
         logger.info(
@@ -88,7 +73,7 @@ def _detect_user_timezone(
 
 
 def _format_offset(offset_secs: float) -> str:
-    """Format a UTC offset seconds into ±HH:MM string."""
+    """Format a UTC offset in seconds to ±HH:MM."""
     sign = "+" if offset_secs >= 0 else "-"
     total_min = int(abs(offset_secs) // 60)
     hh, mm = divmod(total_min, 60)
@@ -96,7 +81,7 @@ def _format_offset(offset_secs: float) -> str:
 
 
 def _format_delay(seconds: float) -> str:
-    """Format a duration in seconds into a human-friendly string."""
+    """Format a duration in seconds into human-friendly string."""
     if seconds < 0:
         return ""
     if seconds < 5:
@@ -116,10 +101,6 @@ def _format_delay(seconds: float) -> str:
     return f"{days}d {hours}h ago"
 
 
-# ---------------------------------------------------------------------------
-# Plugin hooks
-# ---------------------------------------------------------------------------
-
 def _on_pre_llm_call(
     session_id: str = "",
     task_id: str = "",
@@ -135,17 +116,14 @@ def _on_pre_llm_call(
     """Build and inject temporal context into the user message."""
     now_utc = datetime.now(timezone.utc)
 
-    # Server timezone — derive offset from time module
-    # time.timezone = seconds WEST of UTC for standard time (negative = east)
-    # time.daylight = non-zero if DST was ever observed at this location
-    # time.altzone = seconds WEST of UTC for DST (if applicable)
+    # Server timezone
     import zoneinfo
-    _is_dst = time.daylight and time.localtime().tm_isdst
-    server_tz_name = time.tzname[1] if _is_dst else time.tzname[0]
-    server_offset_secs = -(time.altzone if _is_dst else time.timezone)
+    _is_dst = _time.daylight and _time.localtime().tm_isdst
+    server_tz_name = _time.tzname[1] if _is_dst else _time.tzname[0]
+    server_offset_secs = -(_time.altzone if _is_dst else _time.timezone)
     server_offset_str = _format_offset(server_offset_secs)
 
-    # Detect user timezone
+    # User timezone
     user_tz_name = _detect_user_timezone(platform, sender_id)
     try:
         user_tz = zoneinfo.ZoneInfo(user_tz_name)
@@ -169,7 +147,7 @@ def _on_pre_llm_call(
     # Message delay tracking
     show_delay = _get_plugin_config("show_delay", True)
     if show_delay and session_id:
-        now_ts = time.time()
+        now_ts = _time.time()
         with _session_lock:
             last_ts = _session_last_seen.get(session_id, None)
             _session_last_seen[session_id] = now_ts
@@ -182,10 +160,6 @@ def _on_pre_llm_call(
 
     return "## Temporal Context\n" + "\n".join(lines)
 
-
-# ---------------------------------------------------------------------------
-# Plugin registration
-# ---------------------------------------------------------------------------
 
 def register(ctx) -> None:
     """Register the time-awareness hooks."""

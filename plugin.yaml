@@ -1,6 +1,6 @@
 name: time-awareness
-version: 1.0.0
-description: "Injects accurate temporal context into every turn — server time, user timezone, message delay, and platform-aware timestamp formatting. No tool calls needed."
+version: 1.1.0
+description: "Injects accurate temporal context (time, timezone, delay) into every LLM turn. Part of the universal Time Context project — also available as standalone CLI for Claude Code, Codex, OpenCode, and any AI agent."
 author: "Alfnnnnyy"
 hooks:
   - pre_llm_call
