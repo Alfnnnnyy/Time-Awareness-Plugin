@@ -2,7 +2,7 @@
 
 # 🕐 Time Context
 
-**Accurate temporal awareness for every AI agent turn — server time, user timezone, and message delay, injected automatically.**
+**A zero-dependency CLI tool that gives any AI agent accurate time, timezone, and message-delay awareness.**
 
 <br>
 
@@ -26,7 +26,7 @@ Large language models have **no inherent sense of time**. Without external conte
 - Whether the last message arrived 5 seconds or 5 hours ago
 - Whether the user is actively chatting or returning to a cold conversation
 
-**Time Context** solves this by injecting a structured temporal block into every turn — so the agent always operates with accurate time awareness.
+**Time Context** solves this by providing a structured temporal block that any agent can consume:
 
 ```
 ────────────────────────────────────────────────────
@@ -43,166 +43,135 @@ Large language models have **no inherent sense of time**. Without external conte
 
 ---
 
-## Supported Agents
+## Quick Start
 
-| Agent | Integration Method | Status |
-|---|---|---|
-| **Hermes Agent** | Native plugin (`plugin.yaml` + hook) | ✅ Full |
-| **Claude Code** | Shell command via `~/.claude/commands/` | ✅ Supported |
-| **OpenCode / Codex CLI** | `AGENTS.md` template + shell script | ✅ Supported |
-| **Any AI agent** | Standalone `time_context` CLI script | ✅ Supported |
+```bash
+# 1. Install (zero dependencies — pure Python stdlib)
+curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/hermes-time-awareness/main/time_context.py \
+  -o /usr/local/bin/time_context.py && chmod +x /usr/local/bin/time_context.py
+
+# 2. Set your timezone
+export USER_TIMEZONE="Asia/Jayapura"
+
+# 3. Run it
+python3 /usr/local/bin/time_context.py
+```
+
+Output formats:
+
+```bash
+time_context.py                          # Plain (default)
+time_context.py --format markdown        # Markdown table
+time_context.py --format json            # JSON
+time_context.py --session chat-123       # With delay tracking
+```
 
 ---
 
-## Quick Start
+## Integration
 
-### 1. Install the script
-
-```bash
-# Download and install
-curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/hermes-time-awareness/main/install.sh | bash
-
-# Or manually
-mkdir -p ~/.time-context
-curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/hermes-time-awareness/main/time_context.py -o ~/.time-context/time_context.py
-chmod +x ~/.time-context/time_context.py
-```
-
-### 2. Configure your timezone
+### Any agent — standalone CLI
 
 ```bash
-# Set your IANA timezone (default: UTC)
-export USER_TIMEZONE="Asia/Jayapura"
+# One-shot
+python3 /usr/local/bin/time_context.py --format markdown
+
+# Pipe into your prompt
+echo "Current time context: $(python3 /usr/local/bin/time_context.py --format json)"
 ```
 
-### 3. Wire it into your agent
-
-<details>
-<summary><b>Hermes Agent</b> (click to expand)</summary>
-
-```bash
-# Install plugin
-mkdir -p ~/.hermes/plugins/time-awareness
-cp -r * ~/.hermes/plugins/time-awareness/
-
-# Enable
-hermes plugins enable time-awareness
-hermes config set plugins.entries.time-awareness.user_timezone "Asia/Jayapura"
-
-# Restart gateway
-/restart
-```
-</details>
-
-<details>
-<summary><b>Claude Code</b> (click to expand)</summary>
+### Claude Code
 
 Add a custom slash command in `~/.claude/commands/`:
 
-**`~/.claude/commands/time-context.json`:**
+**`~/.claude/commands/time.json`:**
 ```json
 {
   "name": "time",
-  "description": "Inject current time and timezone context",
+  "description": "Show current time, timezone, and message delay",
   "script": {
     "command": "python3",
-    "args": ["~/.time-context/time_context.py", "--format", "markdown"]
+    "args": ["/usr/local/bin/time_context.py", "--format", "markdown"]
   }
 }
 ```
 
-Or add to your `CLAUDE.md`:
-```markdown
-## Time Context
-Before responding to time-sensitive queries, run:
-```bash
-python3 ~/.time-context/time_context.py
-```
-This outputs the current time, timezone, and message delay context.
-```
-</details>
+Then use `/time` during any Claude Code session.
 
-<details>
-<summary><b>OpenCode / Codex CLI</b> (click to expand)</summary>
+### OpenCode / Codex CLI
 
 Add this to your project's `AGENTS.md`:
 
 ```markdown
 ## Temporal Context
-Before each response, the agent SHOULD check the current time by running:
+Before responding, run:
 ```
-python3 ~/.time-context/time_context.py
+python3 /usr/local/bin/time_context.py
+```
+This outputs accurate time, timezone, and delay information.
 ```
 
-This ensures responses include accurate time, timezone, and delay information.
-```
+### Hermes Agent
 
-For persistent injection, use a pre-prompt hook or script that runs automatically.
-</details>
-
-<details>
-<summary><b>Any agent (standalone CLI)</b> (click to expand)</summary>
+Install as a native plugin for automatic injection on every turn:
 
 ```bash
-# Basic usage
-python3 ~/.time-context/time_context.py
+# Copy plugin files
+mkdir -p ~/.hermes/plugins/time-awareness
+cp plugin.yaml __init__.py ~/.hermes/plugins/time-awareness/
 
-# Custom timezone
-USER_TIMEZONE="America/New_York" python3 ~/.time-context/time_context.py
+# Enable
+hermes plugins enable time-awareness
+hermes config set plugins.entries.time-awareness.user_timezone "Asia/Jayapura"
 
-# Markdown output (for embedding in responses)
-python3 ~/.time-context/time_context.py --format markdown
-
-# JSON output (for programmatic use)
-python3 ~/.time-context/time_context.py --format json
+# Restart Hermes gateway
+/restart
 ```
-</details>
+
+Once enabled, temporal context is injected automatically — no manual command needed.
 
 ---
 
 ## Configuration
 
-### Environment Variables
-
 | Variable | Default | Description |
 |---|---|---|
 | `USER_TIMEZONE` | `"UTC"` | Any IANA timezone (e.g. `"Asia/Jayapura"`, `"America/New_York"`) |
-
-### Hermes Plugin Config
-
-When used as a Hermes plugin, configure via `config.yaml`:
-
-```yaml
-plugins:
-  enabled:
-    - time-awareness
-  entries:
-    time-awareness:
-      user_timezone: "Asia/Jayapura"    # Your IANA timezone
-      auto_detect_timezone: false       # (future) auto-detect from platform
-      show_delay: true                  # Track message delay between turns
-```
 
 ---
 
 ## Timezone Reference
 
-The plugin supports **all ~600 IANA timezones**. Common examples:
+Supports **~600 IANA timezones**. Common examples:
 
-| Location | IANA Timezone | UTC Offset |
+| Location | IANA Timezone | Offset |
 |---|---|---|
 | Jayapura, Indonesia (WIT) | `Asia/Jayapura` | +09:00 |
 | Jakarta, Indonesia (WIB) | `Asia/Jakarta` | +07:00 |
 | Makassar, Indonesia (WITA) | `Asia/Makassar` | +08:00 |
 | Tokyo, Japan | `Asia/Tokyo` | +09:00 |
 | Shanghai / Beijing | `Asia/Shanghai` | +08:00 |
-| Singapore | `Asia/Singapore` | +08:00 |
 | London, UK | `Europe/London` | +00:00/+01:00 |
 | New York, USA | `America/New_York` | -05:00/-04:00 |
-| Dubai, UAE | `Asia/Dubai` | +04:00 |
-| São Paulo, Brazil | `America/Sao_Paulo` | -03:00/-02:00 |
 
-> **Tip:** Run `python3 -c "import zoneinfo; print(*sorted(zoneinfo.available_timezones()), sep='\\n')"` to see every supported timezone.
+> Run `python3 -c "import zoneinfo; print(*sorted(zoneinfo.available_timezones()), sep='\\n')"` to see them all.
+
+---
+
+## How It Works
+
+`time_context.py` is a single-file, zero-dependency Python script that:
+
+1. Reads the current UTC time (`datetime.now(timezone.utc)`)
+2. Resolves the user's timezone from `USER_TIMEZONE` (or falls back to UTC)
+3. Calculates the server timezone offset from `time.timezone`
+4. Converts UTC to user local time
+5. Tracks message delay per session (for `--session` mode)
+6. Outputs the formatted block in your chosen format
+
+### Hermes plugin mode
+
+When loaded as a Hermes plugin, the `pre_llm_call` hook fires automatically before every API call. The temporal context is injected into the **user message** — not the system prompt — so the prompt cache stays warm.
 
 ---
 
@@ -211,43 +180,24 @@ The plugin supports **all ~600 IANA timezones**. Common examples:
 ```
 time-context/
 ├── README.md               # This file
-├── LICENSE                 # MIT License
-├── plugin.yaml             # Hermes Agent plugin manifest
-├── __init__.py             # Hermes Agent plugin code
-├── time_context.py         # Universal standalone CLI script
-├── install.sh              # Universal installer
-├── examples/
-│   ├── CLAUDE.md           # Claude Code integration example
-│   └── AGENTS.md           # OpenCode/Codex integration example
+├── LICENSE                 # MIT
+├── time_context.py         # ⭐ Universal CLI script (use this)
+├── plugin.yaml             # Hermes plugin manifest
+├── __init__.py             # Hermes plugin code
+├── install.sh              # Interactive installer
+└── examples/
+    ├── CLAUDE.md           # Claude Code integration
+    └── AGENTS.md           # OpenCode / Codex integration
 ```
 
----
-
-## How It Works
-
-The core logic lives in `time_context.py` — a zero-dependency Python script that:
-
-1. Reads the current UTC time (`datetime.now(timezone.utc)`)
-2. Resolves the user's timezone from `USER_TIMEZONE` env var (or falls back to UTC)
-3. Calculates the time difference between server and user
-4. Tracks per-session message delay via a lightweight in-memory store
-5. Outputs a formatted temporal context block
-
-### Hermes Plugin Mode
-
-When loaded as a Hermes plugin, the `pre_llm_call` hook fires automatically before every API call. The temporal context is injected into the **user message** (not the system prompt), preserving prompt cache warmth.
-
-### Standalone CLI Mode
-
-Other agents call `time_context.py` as a subprocess. The script outputs the context block and exits — no server, no daemon, no dependencies.
+> Use `time_context.py` for any agent. The `plugin.yaml` + `__init__.py` are only needed for Hermes native-plugin mode.
 
 ---
 
 ## Requirements
 
-- **Python 3.9+** (uses stdlib `zoneinfo` — no pip packages needed)
-- Hermes Agent: any recent version with plugin support (for Hermes mode)
-- Everything else: just Python
+- **Python 3.9+** (stdlib only — `zoneinfo` built in)
+- Nothing else
 
 ---
 
