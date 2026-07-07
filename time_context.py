@@ -75,7 +75,7 @@ def _format_delay(seconds: float) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Per-session delay tracking (lightweight, in-memory)
+# Per-session delay tracking (lightweight, file-backed)
 # ---------------------------------------------------------------------------
 _session_last_seen: dict[str, float] = {}
 _session_file: str | None = None
@@ -83,7 +83,7 @@ _session_file: str | None = None
 
 def _load_session_state():
     """Load session state from disk if a session file is configured."""
-    global _session_last_seen
+    global _session_last_seen, _session_file
     path = os.environ.get("TIME_CONTEXT_STATE")
     if not path:
         return
@@ -91,6 +91,36 @@ def _load_session_state():
     try:
         import json as _json
         with open(path) as _f:
+            data = _json.load(_f)
+        if isinstance(data, dict):
+            _session_last_seen = {k: float(v) for k, v in data.items()}
+    except (FileNotFoundError, ValueError):
+        pass
+
+
+def _init_session_state(session_id: str | None):
+    """Ensure session persistence is wired up.
+
+    Called once from ``main()``.  If ``--session`` was passed without
+    ``TIME_CONTEXT_STATE``, picks a default path so delay tracking
+    persists across CLI invocations.
+    """
+    global _session_last_seen, _session_file
+    if not session_id:
+        return
+    if _session_file is not None:
+        return  # already set via env var or prior call
+
+    # Default state path when no explicit env var
+    default_dir = os.path.join(os.path.expanduser("~"), ".time-context")
+    os.makedirs(default_dir, exist_ok=True)
+    default_path = os.path.join(default_dir, "session_state.json")
+    _session_file = default_path
+
+    # Load existing state from default path
+    try:
+        import json as _json
+        with open(default_path) as _f:
             data = _json.load(_f)
         if isinstance(data, dict):
             _session_last_seen = {k: float(v) for k, v in data.items()}
@@ -110,14 +140,18 @@ def _save_session_state():
         pass
 
 
-def _get_delay(session_id: str) -> str | None:
-    """Calculate delay since last message in a session. Returns None on first message."""
+def _get_delay(session_id: str) -> tuple[str, float] | tuple[None, None]:
+    """Calculate delay since last message in a session.
+
+    Returns ``(formatted_str, raw_seconds)``, or ``(None, None)`` on first message.
+    """
     now = _time.time()
     last = _session_last_seen.get(session_id)
     _session_last_seen[session_id] = now
     if last is None:
-        return None
-    return _format_delay(now - last)
+        return None, None
+    raw = now - last
+    return _format_delay(raw), raw
 
 
 # ---------------------------------------------------------------------------
@@ -166,8 +200,9 @@ def build_context(
 
     # Delay
     delay_str = None
+    delay_secs = None
     if session_id:
-        delay_str = _get_delay(session_id)
+        delay_str, delay_secs = _get_delay(session_id)
 
     if format == "json":
         data = {
@@ -187,15 +222,15 @@ def build_context(
 
     if format == "markdown":
         lines.append("## Temporal Context\n")
-        lines.append(f"| Field | Value |")
-        lines.append(f"|---|---|")
+        lines.append("| Field | Value |")
+        lines.append("|---|---|")
         lines.append(f"| **Server time** | `{now_utc.strftime('%Y-%m-%d %H:%M:%S')} UTC` |")
         lines.append(f"| **Server tz** | `{server_tz_name} (UTC{server_offset_str})` |")
         lines.append(f"| **User time** | `{user_now.strftime('%Y-%m-%d %H:%M:%S')}` |")
         lines.append(f"| **User tz** | `{user_tz_name} (UTC{user_offset_str})` |")
         if delay_str:
             lines.append(f"| **Delay** | `{delay_str}` |")
-            if delay_str and delay_str.endswith("ago") and not delay_str.endswith("d "):
+            if delay_secs is not None and delay_secs < 300:
                 lines.append(f"| **Note** | `User is actively chatting (delay <5min)` |")
         return "\n".join(lines)
 
@@ -209,6 +244,8 @@ def build_context(
     lines.append(f"  User tz:      {user_tz_name} (UTC{user_offset_str})")
     if delay_str:
         lines.append(f"  Delay:        {delay_str}")
+        if delay_secs is not None and delay_secs < 300:
+            lines.append(f"  Note:         User is actively chatting (delay <5min)")
     lines.append(f"{sep}")
     return "\n".join(lines)
 
@@ -250,12 +287,19 @@ def main():
     )
     args = parser.parse_args()
 
+    # Initialize session persistence (env var or default ~/.time-context/)
+    _init_session_state(args.session)
+
     context = build_context(
         user_timezone=args.timezone,
         session_id=args.session,
         format=args.format,
     )
     print(context)
+
+    # Persist session state so subsequent CLI calls can track delay
+    if args.session:
+        _save_session_state()
 
 
 if __name__ == "__main__":

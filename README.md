@@ -78,19 +78,19 @@ echo "Current time context: $(python3 /usr/local/bin/time_context.py --format js
 
 ### Claude Code
 
-Add a custom slash command in `~/.claude/commands/`:
+Create `~/.claude/commands/time.md`:
 
-**`~/.claude/commands/time.json`:**
-```json
-{
-  "name": "time",
-  "description": "Show current time, timezone, and message delay",
-  "script": {
-    "command": "python3",
-    "args": ["/usr/local/bin/time_context.py", "--format", "markdown"]
-  }
-}
+````markdown
+---
+description: "Show current time, timezone, and message delay"
+---
+
+Run this to get accurate temporal context:
+
+```bash
+python3 /usr/local/bin/time_context.py --format markdown
 ```
+````
 
 Then use `/time` during any Claude Code session.
 
@@ -133,6 +133,7 @@ Once enabled, temporal context is injected automatically — no manual command n
 | Variable | Default | Description |
 |---|---|---|
 | `USER_TIMEZONE` | `"UTC"` | Any IANA timezone (e.g. `"Asia/Jayapura"`, `"America/New_York"`) |
+| `TIME_CONTEXT_STATE` | `~/.time-context/session_state.json` | Path to session state file for delay tracking |
 
 ---
 
@@ -162,12 +163,12 @@ Supports **~600 IANA timezones**. Common examples:
 2. Resolves the user's timezone from `USER_TIMEZONE` (or falls back to UTC)
 3. Calculates the server timezone offset from `time.timezone`
 4. Converts UTC to user local time
-5. Tracks message delay per session (for `--session` mode)
+5. Tracks message delay per session via a JSON file in `~/.time-context/`
 6. Outputs the formatted block in your chosen format
 
 ### Hermes plugin mode
 
-When loaded as a Hermes plugin, the `pre_llm_call` hook fires automatically before every API call. The temporal context is injected into the **user message** — not the system prompt — so the prompt cache stays warm.
+When loaded as a Hermes plugin, the `pre_llm_call` hook fires automatically before every API call. The temporal context is injected into the **user message** — not the system prompt — so the prompt cache stays warm. Delay tracking uses in-memory state (the plugin runs in a long-lived process).
 
 ---
 

@@ -4,17 +4,16 @@ This project adds temporal awareness to Claude Code.
 
 ## Option 1: Custom slash command
 
-Create `~/.claude/commands/time.json`:
+Create `~/.claude/commands/time.md`:
 
-```json
-{
-  "name": "time",
-  "description": "Show current time, timezone, and message delay",
-  "script": {
-    "command": "python3",
-    "args": ["~/.time-context/time_context.py", "--format", "markdown"]
-  }
-}
+```markdown
+---
+description: "Show current time, timezone, and message delay"
+---
+
+Get accurate temporal context:
+
+    python3 ~/.time-context/time_context.py --format markdown
 ```
 
 Then use `/time` during any Claude Code session.
