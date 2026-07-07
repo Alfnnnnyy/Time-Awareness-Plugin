@@ -51,7 +51,6 @@ Large language models have **no inherent sense of time**. Without external conte
 | **Claude Code** | Shell command via `~/.claude/commands/` | ✅ Supported |
 | **OpenCode / Codex CLI** | `AGENTS.md` template + shell script | ✅ Supported |
 | **Any AI agent** | Standalone `time_context` CLI script | ✅ Supported |
-| **Cline / Continue** | MCP server mode | 🔜 Planned |
 
 ---
 
@@ -231,7 +230,7 @@ The core logic lives in `time_context.py` — a zero-dependency Python script th
 1. Reads the current UTC time (`datetime.now(timezone.utc)`)
 2. Resolves the user's timezone from `USER_TIMEZONE` env var (or falls back to UTC)
 3. Calculates the time difference between server and user
-4. Tracks per-session message delay via an in-memory store
+4. Tracks per-session message delay via a lightweight in-memory store
 5. Outputs a formatted temporal context block
 
 ### Hermes Plugin Mode
@@ -249,18 +248,6 @@ Other agents call `time_context.py` as a subprocess. The script outputs the cont
 - **Python 3.9+** (uses stdlib `zoneinfo` — no pip packages needed)
 - Hermes Agent: any recent version with plugin support (for Hermes mode)
 - Everything else: just Python
-
----
-
-## Roadmap
-
-- [x] Hermes Agent plugin
-- [x] Standalone CLI script
-- [x] Claude Code integration guide
-- [x] OpenCode / Codex CLI integration guide
-- [ ] MCP server mode (universal MCP tool)
-- [ ] Auto-detect timezone from IP geo-location
-- [ ] Plugin for Cline / Continue / Windsurf
 
 ---
 
