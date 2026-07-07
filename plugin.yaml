@@ -1,0 +1,6 @@
+name: time-awareness
+version: 1.0.0
+description: "Injects accurate temporal context into every turn — server time, user timezone, message delay, and platform-aware timestamp formatting. No tool calls needed."
+author: "Alfnnnnyy"
+hooks:
+  - pre_llm_call
