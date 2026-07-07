@@ -5,9 +5,7 @@
 Before every response, you MUST run the following command to get the
 accurate current time, user timezone, and message delay:
 
-```
-python3 ~/.time-context/time_context.py
-```
+    python3 ~/.time-context/time_context.py
 
 Use this information to:
 - Reference the correct current time in your responses

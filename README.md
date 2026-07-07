@@ -96,30 +96,33 @@ Then use `/time` during any Claude Code session.
 
 ### OpenCode / Codex CLI
 
-OpenCode reads `AGENTS.md` from your project root. Codex CLI reads `CLAUDE.md`. Both are plain markdown files that get injected into the agent's system prompt — the agent sees the instructions on every turn.
+Both tools read `AGENTS.md` from your project root — a plain markdown file
+that gets injected into the agent's system prompt on every turn.
 
-Create `AGENTS.md` (or `CLAUDE.md`) in your project root:
-
-```markdown
+```bash
+# Create AGENTS.md at your project root
+cat > AGENTS.md << 'EOF'
 ## Temporal Context
 
 Before every response, you MUST run the following command to get the
 accurate current time, user timezone, and message delay:
 
-```
-python3 ~/.time-context/time_context.py
-```
+    python3 ~/.time-context/time_context.py
 
 Use this to reference the correct time, adjust for timezone,
 and consider whether the user is actively chatting.
+EOF
 ```
 
-Or copy the ready-made file:
+Or download the ready-made file:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/Time-Awareness-Plugin/main/examples/AGENTS.md \
   -o AGENTS.md
 ```
+
+> **Codex CLI** also supports `AGENTS.override.md` — create that instead
+> if you want local overrides that won't be committed to the repo.
 
 ### Hermes Agent
 
