@@ -8,10 +8,6 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://python.org)
-[![Hermes](https://img.shields.io/badge/Hermes-plugin-8A2BE2)](https://hermes-agent.nousresearch.com)
-[![Claude Code](https://img.shields.io/badge/Claude_Code-ready-000)](https://docs.anthropic.com/en/docs/claude-code)
-[![Codex](https://img.shields.io/badge/Codex-ready-000)](https://codex.openai.com)
-[![OpenCode](https://img.shields.io/badge/OpenCode-ready-000)](https://github.com/sst/opencode)
 
 </div>
 
