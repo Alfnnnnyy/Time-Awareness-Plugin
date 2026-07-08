@@ -1,76 +1,69 @@
 #!/usr/bin/env bash
 #
-# 🕐 Time Context — universal installer
+# 🕐 Time Context Installer
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/Time-Awareness-Plugin/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Alfnnnnyy/Time-Awareness-Plugin/main/install.sh | bash -s -- --hermes
 #
 set -euo pipefail
 
 REPO="https://raw.githubusercontent.com/Alfnnnnyy/Time-Awareness-Plugin/main"
 INSTALL_DIR="${HOME}/.time-context"
-INSTALL_HERMES=false
-HERMES_PLUGIN_DIR="${HOME}/.hermes/plugins/time-awareness"
+MODE="cli"  # cli or hermes
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --dir) INSTALL_DIR="$2"; shift 2 ;;
-        --hermes) INSTALL_HERMES=true; shift ;;
+        --hermes) MODE="hermes"; shift ;;
         --help)
-            echo "Usage: install.sh [--dir PATH] [--hermes]"
-            echo "  --dir PATH    Install to custom directory (default: ~/.time-context)"
-            echo "  --hermes      Also install as Hermes Agent plugin"
+            echo "Usage: install.sh [--hermes] [--dir PATH]"
             exit 0 ;;
-        *) echo "Unknown option: $1"; exit 1 ;;
+        *) echo "Unknown: $1"; exit 1 ;;
     esac
 done
 
 echo "🕐 Time Context Installer"
-echo "═══════════════════════════"
+echo "══════════════════════════"
 
 mkdir -p "${INSTALL_DIR}"
+
+# Download core script
 echo "📥 Downloading time_context.py..."
 if command -v curl &>/dev/null; then
     curl -fsSL "${REPO}/time_context.py" -o "${INSTALL_DIR}/time_context.py"
-elif command -v wget &>/dev/null; then
-    wget -q "${REPO}/time_context.py" -O "${INSTALL_DIR}/time_context.py"
 else
-    echo "❌ Neither curl nor wget found."
-    exit 1
+    wget -q "${REPO}/time_context.py" -O "${INSTALL_DIR}/time_context.py"
 fi
 chmod +x "${INSTALL_DIR}/time_context.py"
-echo "✅ Installed to ${INSTALL_DIR}/time_context.py"
+echo "✅ time_context.py installed"
 
-# Shell integration
+# Set timezone
 SHELL_RC="${HOME}/.bashrc"
 [[ "${SHELL-}" == *zsh* ]] && SHELL_RC="${HOME}/.zshrc"
-
 if ! grep -q "USER_TIMEZONE=" "${SHELL_RC}" 2>/dev/null; then
-    echo ""
-    echo "🔧 Set your timezone:"
-    read -r -p "   IANA timezone (e.g. Asia/Jayapura) [UTC]: " TZ
+    read -r -p "🔧 IANA timezone (e.g. Asia/Jayapura) [UTC]: " TZ
     TZ="${TZ:-UTC}"
     {
         echo ""
         echo "# 🕐 Time Context"
         echo "export USER_TIMEZONE=\"${TZ}\""
-        echo "export PATH=\"\${PATH}:${INSTALL_DIR}\""
     } >> "${SHELL_RC}"
-    echo "✅ Added USER_TIMEZONE=${TZ} to ${SHELL_RC}"
+    echo "✅ USER_TIMEZONE=${TZ} added to ${SHELL_RC}"
 fi
 
-if [[ "${INSTALL_HERMES}" == true ]]; then
+# Hermes plugin
+if [[ "${MODE}" == "hermes" ]]; then
     echo "🔌 Installing Hermes plugin..."
-    mkdir -p "${HERMES_PLUGIN_DIR}"
-    curl -fsSL "${REPO}/plugin.yaml" -o "${HERMES_PLUGIN_DIR}/plugin.yaml"
-    curl -fsSL "${REPO}/__init__.py"  -o "${HERMES_PLUGIN_DIR}/__init__.py"
+    mkdir -p "${HOME}/.hermes/plugins/time-awareness"
+    curl -fsSL "${REPO}/plugin.yaml" -o "${HOME}/.hermes/plugins/time-awareness/plugin.yaml"
+    curl -fsSL "${REPO}/__init__.py" -o "${HOME}/.hermes/plugins/time-awareness/__init__.py"
     echo "✅ Hermes plugin installed"
     echo "   Run: hermes plugins enable time-awareness"
-    echo "   Then: hermes config set plugins.entries.time-awareness.user_timezone \"${TZ}\""
+    echo "   Run: hermes config set plugins.entries.time-awareness.user_timezone \"${TZ}\""
 fi
 
 echo ""
-echo "═══════════════════════════"
+echo "══════════════════════════"
 echo "✅ Done"
-echo "Usage: time_context.py [--format markdown|json] [--session <id>]"
-echo "See: https://github.com/Alfnnnnyy/Time-Awareness-Plugin"
+echo "Usage: python3 ${INSTALL_DIR}/time_context.py [--format markdown|json] [--session <id>]"
